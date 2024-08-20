@@ -1,8 +1,20 @@
 # Users api using go
 
+### Client and server
+
+This is a simple client and server implementation using go, the server is a simple api that runs CRUD operations on users, the client is a simple client that uses CRUD operations on users from the server.
+
+### Data storage
+
+The data is stored in memory using a map, so when the server is restarted, the data is lost.
+
 ### Goroutines and Channels
 
 For demonstartion purposes, I used goroutines and channels inside `./server/internal/handlers/get_user.go`, I used `go fetchUser` to run the function asynchrously, and I used a channel to send the response back to the main thread.
+
+### Project structure
+
+the structure of the project is based on the standard go project layout, mentioned in this repo [golang-standards/project-layout](https://github.com/golang-standards/project-layout)
 
 ### Run the server
 
