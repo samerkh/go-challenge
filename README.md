@@ -1,7 +1,15 @@
 # Users api using go
 
-### Run the project
+### Run the server
 
 ```bash
-go run server.go
+cd server
+go run cmd/api/server.go
+```
+
+### Run the client
+
+```bash
+cd client
+go run client.go
 ```
