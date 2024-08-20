@@ -4,6 +4,8 @@
 
 This is a simple client and server implementation using go, the server is a simple api that runs CRUD operations on users, the client is a simple client that uses CRUD operations on users from the server.
 
+For the server i used chi router and logrus for logging, for the client i used the standard go http client.
+
 ### Data storage
 
 The data is stored in memory using a map, so when the server is restarted, the data is lost.
