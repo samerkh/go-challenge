@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/go-chi/chi"
+	log "github.com/sirupsen/logrus"
 )
 
 type User struct {
@@ -11,92 +14,137 @@ type User struct {
 	Name string
 }
 
-var users = []User{}
+var users []User = []User{}
 
-func handleUsers(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		getUsers(w, r)
-	case "POST":
-		addUser(w, r)
-	case "PUT":
-		editUser(w, r)
-	case "DELETE":
-		deleteUser(w, r)
-	default:
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-	}
+func main() {
+	log.SetReportCaller(true)
+	var r *chi.Mux = chi.NewRouter()
+	Handler(r)
+
+	fmt.Println("Server started at http://localhost:8080")
+	http.ListenAndServe(":8080", r)
 }
 
-func getUsers(w http.ResponseWriter, r *http.Request) {
+func Handler(r *chi.Mux) {
+
+	r.Route("/users", func(router chi.Router) {
+		router.Get("/", GetUsers)
+		router.Get("/{id}", GetUser)
+		router.Post("/", CreateUser)
+		router.Put("/{id}", UpdateUser)
+		router.Delete("/{id}", DeleteUser)
+	})
+
+}
+
+func GetUsers(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	if err := json.NewEncoder(w).Encode(users); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	err := json.NewEncoder(w).Encode(users)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, "User not found", http.StatusNotFound)
+
 		return
 	}
 }
 
-func addUser(w http.ResponseWriter, r *http.Request) {
+func GetUser(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+
+	id := chi.URLParam(r, "id")
+
+	for _, user := range users {
+		if id == fmt.Sprint(user.ID) {
+			err := json.NewEncoder(w).Encode(user)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			return
+		}
+	}
+
+	log.Error("User not found")
+	http.Error(w, "User not found", http.StatusNotFound)
+}
+
+func CreateUser(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
 
 	var user User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
 	users = append(users, user)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(user); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	err = json.NewEncoder(w).Encode(user)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 }
 
-func editUser(w http.ResponseWriter, r *http.Request) {
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
-	var user User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	w.Header().Set("Content-Type", "application/json")
 
-	for i, u := range users {
-		if u.ID == user.ID {
+	id := chi.URLParam(r, "id")
+
+	for i, user := range users {
+		if id == fmt.Sprint(user.ID) {
+			var user User
+			err := json.NewDecoder(r.Body).Decode(&user)
+			if err != nil {
+				log.Error(err)
+				http.Error(w, "Invalid request", http.StatusBadRequest)
+				return
+			}
+
 			users[i] = user
-			break
+
+			err = json.NewEncoder(w).Encode(user)
+			if err != nil {
+				log.Error(err)
+				http.Error(w, "User not found", http.StatusNotFound)
+				return
+			}
+			return
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNoContent)
+	log.Error("User not found")
+	http.Error(w, "User not found", http.StatusNotFound)
 }
 
-func deleteUser(w http.ResponseWriter, r *http.Request) {
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
-	var user User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	w.Header().Set("Content-Type", "application/json")
 
-	for i, u := range users {
-		if u.ID == user.ID {
+	id := chi.URLParam(r, "id")
+
+	for i, user := range users {
+		if id == fmt.Sprint(user.ID) {
 			users = append(users[:i], users[i+1:]...)
-			break
+
+			err := json.NewEncoder(w).Encode(user)
+			if err != nil {
+				log.Error(err)
+				http.Error(w, "User not found", http.StatusNotFound)
+				return
+			}
+			return
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func main() {
-	http.HandleFunc("/users", handleUsers)
-
-	fmt.Println("Server started at http://localhost:8080")
-	http.ListenAndServe(":8080", nil)
+	log.Error("User not found")
+	http.Error(w, "User not found", http.StatusNotFound)
 }
