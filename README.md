@@ -16,6 +16,10 @@ For demonstartion purposes, I used goroutines and channels inside `./server/inte
 
 the structure of the project is based on the standard go project layout, mentioned in this repo [golang-standards/project-layout](https://github.com/golang-standards/project-layout)
 
+### Running the project
+
+you need to run the server first before running the client
+
 ### Run the server
 
 ```bash
